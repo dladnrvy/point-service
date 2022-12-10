@@ -7,6 +7,6 @@ import lombok.ToString;
 @ToString
 public class PointDto {
     private Long barcodeId;
-    private Long partnerId;
+    private Long categoryId;
     private Long point;
 }

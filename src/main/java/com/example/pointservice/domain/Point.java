@@ -5,6 +5,10 @@ import lombok.*;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+import static javax.persistence.FetchType.LAZY;
 
 @Entity
 @Getter
@@ -25,7 +29,8 @@ public class Point implements Serializable {
     @Column(nullable = false)
     private Long point;
 
-
+    @OneToMany(mappedBy = "point", fetch = LAZY)
+    private List<PointResult> pointResults = new ArrayList<>();
 
     /**
      * point 증가
@@ -44,7 +49,7 @@ public class Point implements Serializable {
         if(restPoint < 0){
             throw new NotEnoughPointException("need more point");
         }
-        this.point = restPoint;
+        this.point -= reqPoint;
     }
 
     @Builder

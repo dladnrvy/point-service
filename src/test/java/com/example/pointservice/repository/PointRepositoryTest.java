@@ -1,6 +1,5 @@
 package com.example.pointservice.repository;
 
-import com.example.pointservice.domain.Barcode;
 import com.example.pointservice.domain.Point;
 import com.example.pointservice.exception.NotEnoughPointException;
 import org.assertj.core.api.Assertions;
@@ -67,12 +66,8 @@ class PointRepositoryTest {
         // when
         Optional<Point> findId = pointRepository.findById(beforeSavePointData.getId());
         Long findPoint = findId.get().getPoint();
-        Long findBarcodeId = findId.get().getBarcodeId();
-        Long findCategoryId = findId.get().getCategoryId();
 
         // then
-        Assertions.assertThat(findBarcodeId).isEqualTo(findBarcodeId);
-        Assertions.assertThat(findCategoryId).isEqualTo(findCategoryId);
         Assertions.assertThat(findPoint).isEqualTo(2000L);
     }
 
@@ -92,12 +87,8 @@ class PointRepositoryTest {
         // when
         Optional<Point> findId = pointRepository.findById(beforeSavePointData.getId());
         Long findPoint = findId.get().getPoint();
-        Long findBarcodeId = findId.get().getBarcodeId();
-        Long findCategoryId = findId.get().getCategoryId();
 
         // then
-        Assertions.assertThat(findBarcodeId).isEqualTo(findBarcodeId);
-        Assertions.assertThat(findCategoryId).isEqualTo(findCategoryId);
         Assertions.assertThat(findPoint).isEqualTo(2000);
     }
 

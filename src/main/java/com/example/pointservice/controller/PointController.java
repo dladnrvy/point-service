@@ -3,17 +3,19 @@ package com.example.pointservice.controller;
 
 import com.example.pointservice.dto.*;
 import com.example.pointservice.dto.basic.BasicResponse;
-import com.example.pointservice.dto.basic.ErrorResponse;
+import com.example.pointservice.dto.basic.RtnCode;
+import com.example.pointservice.service.PointResultServiceImpl;
 import com.example.pointservice.service.PointServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -21,59 +23,114 @@ import java.util.Map;
 public class PointController {
 
     private final PointServiceImpl pointService;
+    private final PointResultServiceImpl pointResultService;
     private final ModelMapper modelMapper;
-
-    @GetMapping("/test")
-    public String test(){
-        return String.format("It's Working in Point Service");
-    }
+    private Logger log = LoggerFactory.getLogger(this.getClass().getSimpleName());
 
     @PostMapping("/save")
-    public ResponseEntity<? extends BasicResponse> pointSave(@Validated @RequestBody PointRequestDto pointRequestDto){
-        Map<String, Long> pointChkMap = pointCheck(pointRequestDto);
-        if(pointChkMap.get("barcodeRtn").equals(null)) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("등록 되지 않은 바코드입니다."));
-        else if(pointChkMap.get("partnerRtn").equals(null)) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("등록 되지 않은 상점입니다."));
-        else{
-            Long barcodeId = pointChkMap.get("barcodeRtn");
+    public ResponseEntity<BasicResponse> pointSave(@Validated @RequestBody PointRequestDto pointRequestDto){
+        BasicResponse rtn = new BasicResponse<>();
+
+        try {
+            //파트너id를 통해 카테고리id 조회
+            BasicResponse partnerRtn = findCategoryId(pointRequestDto.getPartnerId());
+            if(partnerRtn.getCode().equals(RtnCode.FAIL)){
+                partnerRtn.setData("partner not found");
+                return ResponseEntity.ok(partnerRtn);
+            }
+            //바코드를 통해 바코드id 조회
+            BasicResponse barcodeRtn = findBarcodeId(pointRequestDto.getBarcode());
+            if(barcodeRtn.getCode().equals(RtnCode.FAIL)){
+                barcodeRtn.setData("barcode not found");
+                return ResponseEntity.ok(barcodeRtn);
+            }
+
             PointDto pointDto = modelMapper.map(pointRequestDto, PointDto.class);
+            Long barcodeId = Long.valueOf(String.valueOf(barcodeRtn.getData()));
+            Long categoryId = Long.valueOf(String.valueOf(partnerRtn.getData()));
             pointDto.setBarcodeId(barcodeId);
+            pointDto.setCategoryId(categoryId);
+            //포인트와 포인트결과 저장
             pointService.savePoint(pointDto);
+
+            if(barcodeRtn.getCode().equals(RtnCode.SUCCESS) && partnerRtn.getCode().equals(RtnCode.SUCCESS)){
+                rtn.setCode(RtnCode.SUCCESS);
+            }
+        }catch (Exception e){
+            rtn.setCode(RtnCode.FAIL);
+            rtn.setData(e.getMessage());
+            return ResponseEntity.ok(rtn);
         }
-        return ResponseEntity.ok().build();
+
+        return ResponseEntity.ok(rtn);
     }
 
     @PostMapping("/use")
-    public ResponseEntity<? extends BasicResponse> pointUse(@Validated @RequestBody PointRequestDto pointRequestDto){
+    public ResponseEntity<BasicResponse> pointUse(@Validated @RequestBody PointRequestDto pointRequestDto){
+        BasicResponse rtn = new BasicResponse<>();
 
-        Map<String, Long> pointChkMap = pointCheck(pointRequestDto);
-        if(pointChkMap.get("barcodeRtn").equals(null)) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("등록 되지 않은 바코드입니다."));
-        else if(pointChkMap.get("partnerRtn").equals(null)) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("등록 되지 않은 상점입니다."));
-        else{
-            Long barcodeId = pointChkMap.get("barcodeRtn");
+        try {
+            //파트너id를 통해 카테고리id 조회
+            BasicResponse partnerRtn = findCategoryId(pointRequestDto.getPartnerId());
+            if(partnerRtn.getCode().equals(RtnCode.FAIL)){
+                partnerRtn.setData("partner not found");
+                return ResponseEntity.ok(partnerRtn);
+            }
+            //바코드를 통해 바코드id 조회
+            BasicResponse barcodeRtn = findBarcodeId(pointRequestDto.getBarcode());
+            if(barcodeRtn.getCode().equals(RtnCode.FAIL)){
+                barcodeRtn.setData("barcode not found");
+                return ResponseEntity.ok(barcodeRtn);
+            }
+
             PointDto pointDto = modelMapper.map(pointRequestDto, PointDto.class);
+            Long barcodeId = Long.valueOf(String.valueOf(barcodeRtn.getData()));
+            Long categoryId = Long.valueOf(String.valueOf(partnerRtn.getData()));
             pointDto.setBarcodeId(barcodeId);
+            pointDto.setCategoryId(categoryId);
+            //포인트와 포인트결과 저장
             pointService.usePoint(pointDto);
+
+            if(barcodeRtn.getCode().equals(RtnCode.SUCCESS) && partnerRtn.getCode().equals(RtnCode.SUCCESS)){
+                rtn.setCode(RtnCode.SUCCESS);
+            }
+        } catch (Exception e){
+            rtn.setCode(RtnCode.FAIL);
+            rtn.setData(e.getMessage());
+            return ResponseEntity.ok(rtn);
         }
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(rtn);
     }
 
-    //바코드, 상점아이디값 체크함수
-    public Map<String, Long> pointCheck(PointRequestDto pointRequestDto){
-        Map<String, Long> map = new HashMap<>();
-
-        Long barcodeId = pointService.findBarcodeId(pointRequestDto.getBarcode());
-        if(barcodeId == null) {
-            map.put("barcodeRtn", null);
-            return map;
-        } else {
-            map.put("barcodeRtn", barcodeId);
+    @PostMapping("/result/find")
+    public ResponseEntity<BasicResponse> findPointResult(@Validated @RequestBody PointResultFindRequestDto pointResultRequestDto){
+        BasicResponse rtn = new BasicResponse<>();
+        //바코드를 통해 바코드id 조회
+        BasicResponse barcodeRtn = findBarcodeId(pointResultRequestDto.getBarcode());
+        if(barcodeRtn.getCode().equals(RtnCode.FAIL)){
+            barcodeRtn.setData("barcode not found");
+            return ResponseEntity.ok(barcodeRtn);
         }
 
-        Long partnerId = pointService.findPartnerId(pointRequestDto.getPartnerId());
-        if(partnerId == null) map.put("partnerRtn", null);
+        Long barcodeId = Long.valueOf(String.valueOf(barcodeRtn.getData()));
 
-        return map;
+
+        //List<PointResultFindDto> reqsult = pointResultService.findPointResult(pointResultRequestDto);
+        return ResponseEntity.ok(rtn);
     }
+
+    //파트너id를 통해 카테고리id 조회
+    private BasicResponse findCategoryId(Long partnerId){
+        BasicResponse partnerRtn = pointService.findCategoryId(partnerId);
+        return partnerRtn;
+    }
+
+    //바코드를 통해 바코드id 조회
+    private BasicResponse findBarcodeId(String barcodeId){
+        BasicResponse barcodeRtn = pointService.findBarcodeId(barcodeId);
+        return barcodeRtn;
+    }
+
 
 }

@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PointControllerTest {
 
     private MockMvc mockMvc;
-    @Autowired private ObjectMapper mapper;
+    private ObjectMapper mapper;
     @Autowired private PointController PointController;
 
 

@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PointRepository extends JpaRepository<Point, Long> {
-    Point findByBarcodeIdAndCategoryId(Long barcodeId, Long categoryId);
+    Point findByBarcodeIdAndCategoryId(Long barcodeId, Long partnerId);
 }
