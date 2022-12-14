@@ -16,9 +16,12 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.persistence.LockModeType;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +44,8 @@ public class PointServiceImpl implements PointService{
         Long barcodeId = pointDto.getBarcodeId();
         Long categoryId = pointDto.getCategoryId();
         Long reqPoint = pointDto.getPoint();
+        Long partnerId = pointDto.getPartnerId();
+
 
         //포인트 조회
         Point findPointEntity = findByBarcodeIdAndCategoryId(barcodeId, categoryId);
@@ -54,9 +59,10 @@ public class PointServiceImpl implements PointService{
 
         //포인트결과저장
         PointResultDto pointResultDto = PointResultDto.builder()
-                .pointId(findPointEntity.getId())
+                .pointId(findPointEntity)
                 .point(reqPoint)
                 .status(2) //차감 2
+                .partnerId(partnerId)
                 .build();
         savePointResult(pointResultDto);
     }
@@ -71,13 +77,13 @@ public class PointServiceImpl implements PointService{
         Long barcodeId = pointDto.getBarcodeId();
         Long categoryId = pointDto.getCategoryId();
         Long reqPoint = pointDto.getPoint();
-        Long pointId;
+        Long partnerId = pointDto.getPartnerId();
 
         //포인트 조회
-        Point findPointEntity = findByBarcodeIdAndCategoryId(barcodeId, categoryId);
-        if(findPointEntity == null){
+        Point pointEntity = findByBarcodeIdAndCategoryId(barcodeId, categoryId);
+        if(pointEntity == null){
             //포인트 저장
-            Point pointEntity = Point.builder()
+                pointEntity = Point.builder()
                     .barcodeId(barcodeId)
                     .categoryId(categoryId)
                     .point(reqPoint)
@@ -85,18 +91,17 @@ public class PointServiceImpl implements PointService{
 
             if(pointEntity == null) throw new NotFoundPointException("point not found");
             pointRepository.save(pointEntity);
-            pointId = pointEntity.getId();
         } else {
             //포인트 업데이트
-            findPointEntity.savePoint(reqPoint);
-            pointId = findPointEntity.getId();
+            pointEntity.savePoint(reqPoint);
         }
 
         //포인트결과저장
         PointResultDto pointResultDto = PointResultDto.builder()
-                .pointId(pointId)
+                .pointId(pointEntity)
                 .point(reqPoint)
                 .status(1) //적립 1
+                .partnerId(partnerId)
                 .build();
         savePointResult(pointResultDto);
     }
@@ -118,9 +123,11 @@ public class PointServiceImpl implements PointService{
     public void savePointResult(PointResultDto pointResultDto) {
         PointResult pointResult = PointResult.builder()
                 .pointId(pointResultDto.getPointId())
-                .point(pointResultDto.getPoint())
+                .resultPoint(pointResultDto.getPoint())
                 .status(pointResultDto.getStatus())
+                .partnerId(pointResultDto.getPartnerId())
                 .build();
+
         pointResultRepository.save(pointResult);
         log.info("pointResult id : " + pointResult.getId());
     }

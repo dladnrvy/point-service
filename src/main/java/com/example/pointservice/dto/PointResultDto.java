@@ -1,5 +1,6 @@
 package com.example.pointservice.dto;
 
+import com.example.pointservice.domain.Point;
 import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
@@ -7,14 +8,16 @@ import lombok.ToString;
 @Data
 @ToString
 public class PointResultDto {
-    private Long pointId;
+    private Point pointId;
     private Integer status;
     private Long point;
+    private Long partnerId;
 
     @Builder
-    public PointResultDto(Long pointId, Integer status, Long point) {
+    public PointResultDto(Point pointId, Integer status, Long point, Long partnerId) {
         this.pointId = pointId;
         this.status = status;
         this.point = point;
+        this.partnerId = partnerId;
     }
 }

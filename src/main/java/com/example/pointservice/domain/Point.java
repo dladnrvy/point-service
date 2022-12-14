@@ -16,20 +16,26 @@ import static javax.persistence.FetchType.LAZY;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Point implements Serializable {
 
+    /** 포인트 아이디 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="points_id")
     private Long id;
 
+    /** 바코드 아이디 */
     @Column(name="barcode_id", nullable = false)
     private Long barcodeId;
 
+    /** 카테고리 아이디 */
     @Column(name="category_id", nullable = false)
     private Long categoryId;
 
+    /** 포인트 */
     @Column(nullable = false)
     private Long point;
 
-    @OneToMany(mappedBy = "point", fetch = LAZY)
+    /** PointResult 조인 */
+    @OneToMany(fetch = LAZY, targetEntity = Point.class)
     private List<PointResult> pointResults = new ArrayList<>();
 
     /**

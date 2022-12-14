@@ -1,5 +1,6 @@
 package com.example.pointservice.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.ToString;
 
@@ -20,4 +21,6 @@ public class PointRequestDto {
     @NotNull(message = "POINT_IS_MANDATORY")
     @Positive
     private Long point;
+
+
 }

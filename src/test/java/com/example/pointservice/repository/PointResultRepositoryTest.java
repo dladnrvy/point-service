@@ -28,8 +28,7 @@ class PointResultRepositoryTest {
     public void 포인트_결과_저장_테스트(){
         // given
         PointResult pointResult = PointResult.builder()
-                .point(100L)
-                .pointId(1L)
+                .resultPoint(100L)
                 .status(1)
                 .build();
 
@@ -38,13 +37,13 @@ class PointResultRepositoryTest {
         Long saveId = savePointResult.getId();
 
         Optional<PointResult> findId = pointResultRepository.findById(saveId);
-        Long findPointId = findId.get().getPointId();
-        Long findPoint = findId.get().getPoint();
+        Long findPoint = findId.get().getResultPoint();
         Integer status = findId.get().getStatus();
 
         // then
-        Assertions.assertThat(findPointId).isEqualTo(savePointResult.getPointId());
-        Assertions.assertThat(findPoint).isEqualTo(pointResult.getPoint());
+        Assertions.assertThat(findPoint).isEqualTo(pointResult.getResultPoint());
         Assertions.assertThat(status).isEqualTo(pointResult.getStatus());
     }
+
+
 }

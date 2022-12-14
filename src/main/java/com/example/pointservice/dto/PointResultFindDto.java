@@ -7,16 +7,14 @@ import lombok.ToString;
 @Data
 @ToString
 public class PointResultFindDto {
-    private String date;
-    private String status;
-    private String partner;
-    private String category;
+    private String stDate;
+    private String edDate;
+    private Long barcodeId;
 
     @Builder
-    public PointResultFindDto(String date, String status, String partner, String category) {
-        this.date = date;
-        this.status = status;
-        this.partner = partner;
-        this.category = category;
+    public PointResultFindDto(String stDate, String edDate, Long barcodeId) {
+        this.stDate = stDate;
+        this.edDate = edDate;
+        this.barcodeId = barcodeId;
     }
 }

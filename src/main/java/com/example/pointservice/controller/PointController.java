@@ -50,6 +50,7 @@ public class PointController {
             Long categoryId = Long.valueOf(String.valueOf(partnerRtn.getData()));
             pointDto.setBarcodeId(barcodeId);
             pointDto.setCategoryId(categoryId);
+            pointDto.setPartnerId(pointRequestDto.getPartnerId());
             //포인트와 포인트결과 저장
             pointService.savePoint(pointDto);
 
@@ -59,8 +60,8 @@ public class PointController {
         }catch (Exception e){
             rtn.setCode(RtnCode.FAIL);
             rtn.setData(e.getMessage());
-            return ResponseEntity.ok(rtn);
         }
+
 
         return ResponseEntity.ok(rtn);
     }
@@ -68,8 +69,7 @@ public class PointController {
     @PostMapping("/use")
     public ResponseEntity<BasicResponse> pointUse(@Validated @RequestBody PointRequestDto pointRequestDto){
         BasicResponse rtn = new BasicResponse<>();
-
-        try {
+        try{
             //파트너id를 통해 카테고리id 조회
             BasicResponse partnerRtn = findCategoryId(pointRequestDto.getPartnerId());
             if(partnerRtn.getCode().equals(RtnCode.FAIL)){
@@ -88,35 +88,50 @@ public class PointController {
             Long categoryId = Long.valueOf(String.valueOf(partnerRtn.getData()));
             pointDto.setBarcodeId(barcodeId);
             pointDto.setCategoryId(categoryId);
+            pointDto.setPartnerId(pointRequestDto.getPartnerId());
             //포인트와 포인트결과 저장
             pointService.usePoint(pointDto);
 
             if(barcodeRtn.getCode().equals(RtnCode.SUCCESS) && partnerRtn.getCode().equals(RtnCode.SUCCESS)){
                 rtn.setCode(RtnCode.SUCCESS);
             }
-        } catch (Exception e){
+        }catch (Exception e){
             rtn.setCode(RtnCode.FAIL);
             rtn.setData(e.getMessage());
-            return ResponseEntity.ok(rtn);
         }
-
         return ResponseEntity.ok(rtn);
     }
 
     @PostMapping("/result/find")
     public ResponseEntity<BasicResponse> findPointResult(@Validated @RequestBody PointResultFindRequestDto pointResultRequestDto){
         BasicResponse rtn = new BasicResponse<>();
-        //바코드를 통해 바코드id 조회
-        BasicResponse barcodeRtn = findBarcodeId(pointResultRequestDto.getBarcode());
-        if(barcodeRtn.getCode().equals(RtnCode.FAIL)){
-            barcodeRtn.setData("barcode not found");
-            return ResponseEntity.ok(barcodeRtn);
+        try{
+            //바코드를 통해 바코드id 조회
+            BasicResponse barcodeRtn = findBarcodeId(pointResultRequestDto.getBarcode());
+            if(barcodeRtn.getCode().equals(RtnCode.FAIL)){
+                barcodeRtn.setData("barcode not found");
+                return ResponseEntity.ok(barcodeRtn);
+            }
+
+            Long barcodeId = Long.valueOf(String.valueOf(barcodeRtn.getData()));
+            PointResultFindDto pointResultFindDto = PointResultFindDto.builder()
+                    .barcodeId(barcodeId)
+                    .stDate(pointResultRequestDto.getStDate())
+                    .edDate(pointResultRequestDto.getEdDate())
+                    .build();
+
+            List<ResultDtoInterface> result = pointResultService.findPointResult(pointResultFindDto);
+            if(!result.isEmpty()){
+                rtn.setCode(RtnCode.SUCCESS);
+                rtn.setData(result);
+            } else {
+                rtn.setCode(RtnCode.FAIL);
+            }
+        }catch (Exception e){
+            rtn.setCode(RtnCode.FAIL);
+            rtn.setData(e.getMessage());
         }
 
-        Long barcodeId = Long.valueOf(String.valueOf(barcodeRtn.getData()));
-
-
-        //List<PointResultFindDto> reqsult = pointResultService.findPointResult(pointResultRequestDto);
         return ResponseEntity.ok(rtn);
     }
 

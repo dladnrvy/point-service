@@ -1,6 +1,7 @@
 package com.example.pointservice.controller;
 
 import com.example.pointservice.domain.Point;
+import com.example.pointservice.dto.PointRequestDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,10 +16,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -31,72 +28,50 @@ class PointControllerTest {
     private ObjectMapper mapper;
     @Autowired private PointController PointController;
 
-
-
     @BeforeEach
     public void init(){
         mockMvc = MockMvcBuilders.standaloneSetup(PointController).build();
     }
 
     @Test
-    void 적립_바코드_상점명_체크_테스트() throws Exception {
+    void 포인트저장_유효성() throws Exception {
         // given
-        String content = mapper.writeValueAsString(new Point(1l, 1l, 1l, 1l));
-
         // when
         mockMvc.perform(
                         MockMvcRequestBuilders.post("/point/save")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .characterEncoding("utf-8")
-                                .content(content))
+                                .content("{\"partnerId\": 0,\"barcode\": \"\", \"point\": 0}"))
                 .andExpect(status().isBadRequest())
                 .andDo(print());
 
     }
 
     @Test
-    void 사용_바코드_상점명_체크_테스트() throws Exception {
+    void 포인트차감_유효성() throws Exception {
         // given
-        String content = mapper.writeValueAsString(new Point(1l, 1l, 1l, 1l));
-
         // when
         mockMvc.perform(
                         MockMvcRequestBuilders.post("/point/use")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .characterEncoding("utf-8")
-                                .content(content))
+                                .content("{\"partnerId\": 0,\"barcode\": \"\", \"point\": 0}"))
                 .andExpect(status().isBadRequest())
                 .andDo(print());
-        // then
+
     }
 
     @Test
-    void 포인트_적립_테스트() throws Exception {
+    void 포인트조회_유효성() throws Exception {
         // given
         // when
         mockMvc.perform(
-                        MockMvcRequestBuilders.post("/barcode/create")
+                        MockMvcRequestBuilders.post("/point/result/find")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .characterEncoding("utf-8")
-                                .content("{\"userId\":\"\"}"))
+                                .content("{\"edDate\": \"\", \"barcode\": \"\"}"))
                 .andExpect(status().isBadRequest())
                 .andDo(print());
-        // then
     }
-
-    @Test
-    void 포인트_사용_테스트() throws Exception {
-        // given
-        // when
-        mockMvc.perform(
-                        MockMvcRequestBuilders.post("/barcode/create")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .characterEncoding("utf-8")
-                                .content("{\"userId\":\"testString\"}"))
-                .andExpect(status().isBadRequest())
-                .andDo(print());
-        // then
-    }
-
 
 }

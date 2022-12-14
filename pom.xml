@@ -66,6 +66,12 @@
             <version>2.5.6</version>
         </dependency>
 
+        <dependency>
+            <groupId>ch.simas.qlrm</groupId>
+            <artifactId>qlrm</artifactId>
+            <version>1.7.1</version>
+        </dependency>
+
         <!--feign client-->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

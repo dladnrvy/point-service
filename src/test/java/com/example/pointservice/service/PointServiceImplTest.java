@@ -13,21 +13,72 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-@Transactional
 @SpringBootTest
 class PointServiceImplTest {
 
     private Logger log = LoggerFactory.getLogger(this.getClass().getSimpleName());
 
-    @InjectMocks private PointServiceImpl pointService;
+    @Autowired private PointServiceImpl pointService;
     @Autowired private PointRepository pointRepository;
 
     @Test
+    //@Transactional
+    void 포인트_동시_차감_테스트() throws InterruptedException {
+        AtomicInteger cnt = new AtomicInteger();
+        int excute = 20;
+        ExecutorService service = Executors.newFixedThreadPool(10);
+        CountDownLatch latch = new CountDownLatch(excute);
+
+        // given
+        Point pointEntity = Point.builder()
+                .barcodeId(0L)
+                .categoryId(0L)
+                .point(10000L)
+                .build();
+        pointRepository.save(pointEntity);
+
+        PointDto pointDto = new PointDto();
+        pointDto.setPoint(1000L);
+        pointDto.setCategoryId(0L);
+        pointDto.setBarcodeId(0L);
+        pointDto.setPartnerId(0L);
+
+        // when
+        for(int i=0; i<excute; i++){
+            service.execute(()->{
+                try{
+                    pointService.usePoint(pointDto);
+                    cnt.getAndIncrement();
+                    log.info("성공");
+                }catch (ObjectOptimisticLockingFailureException oe) {
+                    log.info("충돌");
+                }catch (Exception e){
+                    log.info(e.getMessage());
+                }
+
+                latch.countDown();
+            });
+        }
+        latch.await();
+
+        // then
+        assertThat(cnt.get()).isEqualTo(10);
+    }
+
+    @Test
+    @Transactional
     void 포인트_증가_신규_저장() {
         // given
         PointDto pointDto = new PointDto();
@@ -53,15 +104,16 @@ class PointServiceImplTest {
             pointRepository.save(pointEntity);
 
             //then
-            Assertions.assertThat(barcodeId).isEqualTo(pointEntity.getBarcodeId());
-            Assertions.assertThat(categoryId).isEqualTo(pointEntity.getCategoryId());
-            Assertions.assertThat(reqPoint).isEqualTo(pointEntity.getPoint());
+            assertThat(barcodeId).isEqualTo(pointEntity.getBarcodeId());
+            assertThat(categoryId).isEqualTo(pointEntity.getCategoryId());
+            assertThat(reqPoint).isEqualTo(pointEntity.getPoint());
         } else {
             fail();
         }
     }
 
     @Test
+    @Transactional
     void 포인트_증가_업데이트() {
         // given
         Point pointEntity = Point.builder()
@@ -82,10 +134,11 @@ class PointServiceImplTest {
         }
 
         // then
-        Assertions.assertThat(pointEntity.getPoint()).isEqualTo(200L);
+        assertThat(pointEntity.getPoint()).isEqualTo(200L);
     }
 
     @Test
+    @Transactional
     void 포인트_감소_업데이트() {
         // given
         Point pointEntity = Point.builder()
@@ -106,18 +159,6 @@ class PointServiceImplTest {
         }
 
         // then
-        Assertions.assertThat(pointEntity.getPoint()).isEqualTo(2000L);
-    }
-
-    @Test
-    void findBarcodeId() {
-    }
-
-    @Test
-    void findCategoryId() {
-    }
-
-    @Test
-    void findPartnerId() {
+        assertThat(pointEntity.getPoint()).isEqualTo(2000L);
     }
 }
